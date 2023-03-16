@@ -1,10 +1,8 @@
-FROM debian:bullseye-slim AS compilator
+FROM ubuntu:22.04 AS compilator
 
 LABEL maintainer "Infer team"
 
-# mkdir the man/man1 directory due to Debian bug #863199
 RUN apt-get update && \
-    mkdir -p /usr/share/man/man1 && \
     apt-get install --yes --no-install-recommends \
       autoconf \
       automake \
@@ -12,8 +10,8 @@ RUN apt-get update && \
       bzip2 \
       cmake \
       curl \
-      g++ \
-      gcc \
+      g++-11 \
+      gcc-11 \
       git \
       libc6-dev \
       libgmp-dev \
@@ -49,6 +47,7 @@ RUN cd /infer && \
     eval $(opam env) && \
     ./autogen.sh && \
     ./configure && \
+    ./facebook-clang-plugins/clang/src/prepare_clang_src.sh && \
     ./facebook-clang-plugins/clang/setup.sh
 
 # Generate a release
@@ -59,7 +58,7 @@ RUN cd /infer && \
     DESTDIR="/infer-release" \
     libdir_relative_to_bindir="../lib"
 
-FROM debian:bullseye-slim AS executor
+FROM ubuntu:22.04 AS executor
 
 RUN apt-get update && apt-get install --yes --no-install-recommends sqlite3
 
