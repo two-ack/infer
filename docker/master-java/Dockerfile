@@ -37,13 +37,26 @@ RUN apt-get update && \
 RUN opam init --reinit --bare --disable-sandboxing --yes --auto-setup
 
 # Download the latest Infer from git
-RUN cd / && \
-    git clone --depth 1 https://github.com/facebook/infer/
+#RUN cd / && \
+#    git clone --depth 1 https://github.com/facebook/infer/
+COPY build-infer.sh /infer/
+COPY scripts/ /infer/scripts/
+COPY opam/ /infer/opam/
 
 # Build opam deps first, then infer. This way if any step fails we
 # don't lose the significant amount of work done in the previous
 # steps.
 RUN cd /infer && ./build-infer.sh java --only-setup-opam
+
+COPY autogen.sh /infer/
+COPY configure.ac /infer/
+COPY install-sh /infer/
+COPY Makefile* /infer/
+COPY dependencies/ /infer/dependencies/
+COPY infer/ /infer/infer/
+COPY m4/ /infer/m4/
+COPY sledge/ /infer/sledge/
+
 RUN cd /infer && ./build-infer.sh java
 
 # Generate a release
@@ -56,7 +69,10 @@ RUN cd /infer && \
 
 FROM debian:bullseye-slim AS executor
 
-RUN apt-get update && apt-get install --yes --no-install-recommends sqlite3
+RUN apt-get update && apt-get install --yes --no-install-recommends \
+      sqlite3 \
+      openjdk-11-jdk-headless && \
+    rm -rf /var/lib/apt/lists/*
 
 # Get the infer release
 COPY --from=compilator /infer-release/usr/local /infer

@@ -36,13 +36,26 @@ RUN apt-get update && \
 RUN opam init --reinit --bare --disable-sandboxing --yes --auto-setup
 
 # Download the latest Infer from git
-RUN cd / && \
-    git clone --depth 1 https://github.com/facebook/infer/
+#RUN cd / && \
+#    git clone --depth 1 https://github.com/facebook/infer/
+COPY build-infer.sh /infer/
+COPY scripts/ /infer/scripts/
+COPY opam/ /infer/opam/
 
 # Build opam deps first, then clang, then infer. This way if any step
 # fails we don't lose the significant amount of work done in the
 # previous steps.
 RUN cd /infer && ./build-infer.sh --only-setup-opam
+
+COPY autogen.sh /infer/
+COPY configure.ac /infer/
+COPY Makefile* /infer/
+COPY dependencies/ /infer/dependencies/
+COPY facebook-clang-plugins/ /infer/facebook-clang-plugins/
+COPY infer/ /infer/infer/
+COPY m4/ /infer/m4/
+COPY sledge/ /infer/sledge/
+
 RUN cd /infer && \
     eval $(opam env) && \
     ./autogen.sh && \
